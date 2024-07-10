@@ -29,8 +29,34 @@ def get_token():
 def get_auth_header(token):
     return {"Authorization": "Bearer " + token}
 
+def get_current_top_tracks(token):
+    url = "https://api.spotify.com/v1/"
+    headers = get_auth_header(token)
+    playlist_id = "37i9dQZEVXbNG2KDcFcKOF" #playlist ID of the Top Songs Global Playlist
+    query = f"playlists/{playlist_id}"
+    #print(query)
+    query_url = url + query
+    result = get(query_url, headers=headers)
+    json_result = json.loads(result.content)
+    
+    # with open('result.json', 'w') as f: #looking at the output of the JSON file to know what i need
+    #     json.dump(json_result, f)
+        
+    return json_result['tracks']['items']
+
 def main():
     token = get_token() #token will need to be passed onto all api calls 
-
+    top_tracks = get_current_top_tracks (token)
+    #print(top_tracks['tracks']['items'][0]['track']['name']) #Song name
+    
+    for i in top_tracks:
+        artist_name = i['track']['artists'][0]['name']
+        song_name = i['track']['name']
+        popularity = i['track']['popularity']
+        added_date = i['added_at']
+        artist_link_id = i['track']['artists'][0]['id']
+        release_date = i['track']['album']['release_date']
+        print(f"Artist Name = {artist_name}, Song Name = {song_name}, Popularity = {popularity}, Date Added = {added_date}, Artist Link = {artist_link_id},  Release Date = {release_date} \n")
+    
 if __name__ == "__main__":
     main()
