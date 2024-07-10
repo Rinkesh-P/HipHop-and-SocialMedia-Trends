@@ -39,15 +39,30 @@ def get_current_top_tracks(token):
     result = get(query_url, headers=headers)
     json_result = json.loads(result.content)
     
-    # with open('result.json', 'w') as f: #looking at the output of the JSON file to know what i need
+    # with open('top_tracks.json', 'w') as f: #looking at the output of the JSON file to know what i need
     #     json.dump(json_result, f)
         
     return json_result['tracks']['items']
+
+def get_artist_information(token, link):
+    url = f"https://api.spotify.com/v1/artists/{link}"
+    headers = get_auth_header(token)
+    result = get(url, headers=headers)
+    json_result = json.loads(result.content)
+    # with open('artist_information.json', 'w') as f: #looking at the output of the JSON file to know what i need
+    #     json.dump(json_result, f)
+    #print(f"name {json_result['name']}, genres = {json_result['genres']}, type = {type(json_result['genres'])}")
+    
+    result_set = set(json_result['genres'])
+    if "hip hop" in result_set or "rap" in result_set:
+        return(True)
 
 def main():
     token = get_token() #token will need to be passed onto all api calls 
     top_tracks = get_current_top_tracks (token)
     #print(top_tracks['tracks']['items'][0]['track']['name']) #Song name
+    
+    filtered_tracks = [] 
     
     for i in top_tracks:
         artist_name = i['track']['artists'][0]['name']
@@ -56,7 +71,14 @@ def main():
         added_date = i['added_at']
         artist_link_id = i['track']['artists'][0]['id']
         release_date = i['track']['album']['release_date']
-        print(f"Artist Name = {artist_name}, Song Name = {song_name}, Popularity = {popularity}, Date Added = {added_date}, Artist Link = {artist_link_id},  Release Date = {release_date} \n")
-    
+        if get_artist_information(token, artist_link_id):
+            filtered_tracks.append({'name':song_name, 
+                                    'artist':artist_name,
+                                    'popularity': popularity,
+                                    'release_date': release_date
+                                    })
+        #print(f"Artist Name = {artist_name}, Song Name = {song_name}, Popularity = {popularity}, Date Added = {added_date}, Artist Link = {artist_link_id},  Release Date = {release_date} \n")
+        
+    print(filtered_tracks)
 if __name__ == "__main__":
     main()
