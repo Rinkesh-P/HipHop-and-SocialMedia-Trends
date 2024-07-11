@@ -33,45 +33,64 @@ def get_token():
 def get_auth_header(token):
     return {"Authorization": "Bearer " + token}
 
-def get_current_top_tracks(token):
-    url = "https://api.spotify.com/v1/"
-    headers = get_auth_header(token)
-    playlist_id = "37i9dQZEVXbNG2KDcFcKOF" #playlist ID of the Top Songs Global Playlist
-    query = f"playlists/{playlist_id}"
-    #print(query)
-    query_url = url + query
-    result = get(query_url, headers=headers)
-    json_result = json.loads(result.content)
+# def get_current_top_tracks(token):
+#     url = "https://api.spotify.com/v1/"
+#     headers = get_auth_header(token)
+#     playlist_id = "37i9dQZEVXbNG2KDcFcKOF" #playlist ID of the Top Songs Global Playlist
+#     query = f"playlists/{playlist_id}"
+#     #print(query)
+#     query_url = url + query
+#     result = get(query_url, headers=headers)
+#     json_result = json.loads(result.content)
     
-    # with open('top_tracks.json', 'w') as f: #looking at the output of the JSON file to know what i need
-    #     json.dump(json_result, f)
+#     # with open('top_tracks.json', 'w') as f: #looking at the output of the JSON file to know what i need
+#     #     json.dump(json_result, f)
         
-    return json_result['tracks']['items']
+#     return json_result['tracks']['items']
 
-def get_artist_information(token, link):
-    url = f"https://api.spotify.com/v1/artists/{link}"
+# def get_artist_information(token, link):
+#     url = f"https://api.spotify.com/v1/artists/{link}"
+#     headers = get_auth_header(token)
+#     result = get(url, headers=headers)
+#     json_result = json.loads(result.content)
+#     # with open('artist_information.json', 'w') as f: #looking at the output of the JSON file to know what i need
+#     #     json.dump(json_result, f)
+#     #print(f"name {json_result['name']}, genres = {json_result['genres']}, type = {type(json_result['genres'])}")
+    
+#     result_set = set(json_result['genres'])
+#     if "hip hop" in result_set or "rap" in result_set:
+#         return(True)
+
+async def fetch_shazam_top_200():
+    shazam = Shazam()
+    top_hiphop = await shazam.top_world_genre_tracks(genre=GenreMusic.HIP_HOP_RAP)
+    return top_hiphop['data']
+
+
+async def get_spotify_track(token, track, artist):
+    url = "" 
     headers = get_auth_header(token)
-    result = get(url, headers=headers)
-    json_result = json.loads(result.content)
-    # with open('artist_information.json', 'w') as f: #looking at the output of the JSON file to know what i need
-    #     json.dump(json_result, f)
-    #print(f"name {json_result['name']}, genres = {json_result['genres']}, type = {type(json_result['genres'])}")
+    query = f""
+    query_url = url+query
     
-    result_set = set(json_result['genres'])
-    if "hip hop" in result_set or "rap" in result_set:
-        return(True)
-    
+    pass 
 
 async def main():
     token = get_token() #token will need to be passed onto all api calls 
-    top_tracks = get_current_top_tracks (token)
     
-    result = get("https://api.spotify.com/v1/search?q=kendrick+lamar+%26+type%3Dartist+not+like+us+%26type+%3Dtrack&type=artist%2Ctrack&limit=1", headers=get_auth_header(token))
-    json_result = json.loads(result.content)['tracks']['items']
-    print(json_result[0]['name']) #song name
-    print(json_result[0]['artists'][0]['name']) #artist name
-    print(json_result[0]['popularity']) #popularity 
-    print(json_result[0]['album']['release_date']) #release date
+    shazam_top_200 = await fetch_shazam_top_200()
+    
+    for i in shazam_top_200:
+        song_name = i['attributes']['name']
+        artist_name = i['attributes']['artistName']
+        spotify_track = await get_spotify_track(token, song_name, artist_name)
+        
+    # result = get("https://api.spotify.com/v1/search?q=kendrick+lamar+%26+type%3Dartist+not+like+us+%26type+%3Dtrack&type=artist%2Ctrack&limit=1", headers=get_auth_header(token))
+    # json_result = json.loads(result.content)['tracks']['items']
+    # print(json_result[0]['name']) #song name
+    # print(json_result[0]['artists'][0]['name']) #artist name
+    # print(json_result[0]['popularity']) #popularity 
+    # print(json_result[0]['album']['release_date']) #release date
     
     
     
@@ -96,19 +115,8 @@ async def main():
         #print(f"Artist Name = {artist_name}, Song Name = {song_name}, Popularity = {popularity}, Date Added = {added_date}, Artist Link = {artist_link_id},  Release Date = {release_date} \n")
         
     #print(filtered_tracks)
-    
-    shazam = Shazam()
-    top_hiphop = await shazam.top_world_genre_tracks(genre=GenreMusic.HIP_HOP_RAP, limit=1)
-    for i in top_hiphop['data']:
-        song_name = i['attributes']['name']
-        #artist = 
-        #print(i['attributes']['name'])
-        
-
-loop = asyncio.get_event_loop()
-loop.run_until_complete(main())
 
     
     
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
