@@ -3,8 +3,12 @@ from requests import post, get
 import os 
 import base64
 import json
+import asyncio
+from shazamio import Shazam, Serialize, GenreMusic
 
-load_dotenv() 
+
+
+load_dotenv() #loading client id and client secret from the .env file 
 
 client_id = os.getenv("CLIENT_ID")
 client_secret = os.getenv("CLIENT_SECRET")
@@ -56,29 +60,55 @@ def get_artist_information(token, link):
     result_set = set(json_result['genres'])
     if "hip hop" in result_set or "rap" in result_set:
         return(True)
+    
 
-def main():
+async def main():
     token = get_token() #token will need to be passed onto all api calls 
     top_tracks = get_current_top_tracks (token)
+    
+    result = get("https://api.spotify.com/v1/search?q=kendrick+lamar+%26+type%3Dartist+not+like+us+%26type+%3Dtrack&type=artist%2Ctrack&limit=1", headers=get_auth_header(token))
+    json_result = json.loads(result.content)['tracks']['items']
+    print(json_result[0]['name']) #song name
+    print(json_result[0]['artists'][0]['name']) #artist name
+    print(json_result[0]['popularity']) #popularity 
+    print(json_result[0]['album']['release_date']) #release date
+    
+    
+    
     #print(top_tracks['tracks']['items'][0]['track']['name']) #Song name
     
-    filtered_tracks = [] 
+    # filtered_tracks = [] 
     
-    for i in top_tracks:
-        artist_name = i['track']['artists'][0]['name']
-        song_name = i['track']['name']
-        popularity = i['track']['popularity']
-        added_date = i['added_at']
-        artist_link_id = i['track']['artists'][0]['id']
-        release_date = i['track']['album']['release_date']
-        if get_artist_information(token, artist_link_id):
-            filtered_tracks.append({'name':song_name, 
-                                    'artist':artist_name,
-                                    'popularity': popularity,
-                                    'release_date': release_date
-                                    })
+    # for i in top_tracks:
+    #     artist_name = i['track']['artists'][0]['name']
+    #     song_name = i['track']['name']
+    #     popularity = i['track']['popularity']
+    #     added_date = i['added_at'] 
+    #     artist_link_id = i['track']['artists'][0]['id']
+    #     release_date = i['track']['album']['release_date']
+    #     if get_artist_information(token, artist_link_id):
+    #         filtered_tracks.append({'name':song_name, 
+    #                                 'artist':artist_name,
+    #                                 'popularity': popularity,
+    #                                 'release_date': release_date,
+    #                                 'added_date': added_date
+    #                                 })
         #print(f"Artist Name = {artist_name}, Song Name = {song_name}, Popularity = {popularity}, Date Added = {added_date}, Artist Link = {artist_link_id},  Release Date = {release_date} \n")
         
-    print(filtered_tracks)
+    #print(filtered_tracks)
+    
+    shazam = Shazam()
+    top_hiphop = await shazam.top_world_genre_tracks(genre=GenreMusic.HIP_HOP_RAP, limit=1)
+    for i in top_hiphop['data']:
+        song_name = i['attributes']['name']
+        #artist = 
+        #print(i['attributes']['name'])
+        
+
+loop = asyncio.get_event_loop()
+loop.run_until_complete(main())
+
+    
+    
 if __name__ == "__main__":
     main()
